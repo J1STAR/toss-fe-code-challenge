@@ -59,12 +59,13 @@ const ContactForm = ({ closeModal, resolve, onIdsReady, isOpen }: ContactFormPro
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, touchedFields },
     setFocus,
     trigger,
   } = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
     mode: "onBlur",
+    reValidateMode: "onBlur",
   });
 
 
@@ -130,27 +131,31 @@ const ContactForm = ({ closeModal, resolve, onIdsReady, isOpen }: ContactFormPro
     }
   };
 
-  // Step validation
+  // Step validation - 단계별 검증 로직을 명확하게 분리
   const validateStep = async (step: number) => {
-    const fieldsToValidate = {
-      1: ["name", "email"],
-      2: ["experience"],
-      3: ["githubLink"], // GitHub 링크 검증 (선택사항이지만 입력된 경우 유효성 검사)
+    const stepValidationMap = {
+      1: ["name", "email"],      // 기본 정보 검증
+      2: ["experience"],         // 경력 정보 검증  
+      3: ["githubLink"],         // GitHub 링크 검증 (선택사항)
     };
     
-    const fields = fieldsToValidate[step as keyof typeof fieldsToValidate];
-    if (fields && fields.length > 0) {
-      const isValid = await trigger(fields as any);
-      if (isValid) {
-        if (step === 3) {
-          // Step 3에서 검증 통과 시 바로 폼 제출
-          handleSubmit(onSubmit)();
-        } else {
-          setCurrentStep(step + 1);
-        }
-      }
-    } else {
+    const fieldsToValidate = stepValidationMap[step as keyof typeof stepValidationMap];
+    
+    if (!fieldsToValidate) {
       setCurrentStep(step + 1);
+      return;
+    }
+    
+    const isValid = await trigger(fieldsToValidate as any);
+    
+    if (isValid) {
+      if (step === 3) {
+        // 마지막 단계에서 검증 통과 시 폼 제출
+        handleSubmit(onSubmit)();
+      } else {
+        // 다음 단계로 이동
+        setCurrentStep(step + 1);
+      }
     }
   };
 
@@ -279,6 +284,7 @@ const ContactForm = ({ closeModal, resolve, onIdsReady, isOpen }: ContactFormPro
                 placeholder="홍길동"
                 {...register("name")}
                 error={errors.name?.message}
+                touched={touchedFields.name}
                 disabled={isSubmitting}
                 autoComplete="name"
                 onKeyDown={handleKeyPress}
@@ -289,6 +295,7 @@ const ContactForm = ({ closeModal, resolve, onIdsReady, isOpen }: ContactFormPro
                 placeholder="example@company.com"
                 {...register("email")}
                 error={errors.email?.message}
+                touched={touchedFields.email}
                 disabled={isSubmitting}
                 autoComplete="email"
                 onKeyDown={handleKeyPress}
@@ -313,7 +320,11 @@ const ContactForm = ({ closeModal, resolve, onIdsReady, isOpen }: ContactFormPro
                 <select
                   id="experience"
                   {...register("experience")}
-                  className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                  className={`mt-1 block w-full rounded-md border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-slate-700 dark:text-slate-100 ${
+                    touchedFields.experience && errors.experience 
+                      ? 'border-red-500 dark:border-red-500' 
+                      : 'border-slate-300 dark:border-slate-600'
+                  }`}
                   disabled={isSubmitting}
                   onKeyDown={handleKeyPress}
                 >
@@ -322,8 +333,8 @@ const ContactForm = ({ closeModal, resolve, onIdsReady, isOpen }: ContactFormPro
                   <option value="4-7">4-7년</option>
                   <option value="8+">8년 이상</option>
                 </select>
-                {errors.experience && (
-                  <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                {touchedFields.experience && errors.experience && (
+                  <p className="mt-1 text-xs text-red-600 dark:text-red-400" role="alert" aria-live="polite">
                     {errors.experience.message}
                   </p>
                 )}
@@ -347,6 +358,7 @@ const ContactForm = ({ closeModal, resolve, onIdsReady, isOpen }: ContactFormPro
                 placeholder="https://github.com/username"
                 {...register("githubLink")}
                 error={errors.githubLink?.message}
+                touched={touchedFields.githubLink}
                 disabled={isSubmitting}
                 autoComplete="url"
                 onKeyDown={handleKeyPress}
@@ -405,17 +417,27 @@ const ContactForm = ({ closeModal, resolve, onIdsReady, isOpen }: ContactFormPro
         </div>
       </ModalFooter>
 
-      {/* Screen reader announcements */}
-      {(errors.name || errors.email || errors.experience || errors.githubLink) && (
+      {/* Screen reader announcements - 터치된 필드의 오류만 알림 */}
+      {(touchedFields.name && errors.name) || 
+       (touchedFields.email && errors.email) || 
+       (touchedFields.experience && errors.experience) || 
+       (touchedFields.githubLink && errors.githubLink) ? (
         <div 
           className="sr-only" 
           role="alert" 
           aria-live="assertive"
           aria-atomic="true"
         >
-          오류가 발생했습니다: {Object.keys(errors).map(key => errors[key as keyof typeof errors]?.message).join(", ")}
+          입력 오류가 있습니다: {
+            [
+              touchedFields.name && errors.name && errors.name.message,
+              touchedFields.email && errors.email && errors.email.message,
+              touchedFields.experience && errors.experience && errors.experience.message,
+              touchedFields.githubLink && errors.githubLink && errors.githubLink.message
+            ].filter(Boolean).join(", ")
+          }
         </div>
-      )}
+      ) : null}
 
       {/* Loading overlay */}
       {isSubmitting && (
