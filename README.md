@@ -23,19 +23,43 @@
 - **페이지 접근성**: 스킵 링크, 시맨틱 랜드마크, 고대비/다크모드 지원
 - **단계별 포커스 관리**: 각 단계로 이동할 때마다 해당 단계의 첫 번째 입력 필드에 자동 포커스
 
-#### ② 컴포넌트 모듈화: Atomic Design Pattern 적용
+#### ② 컴포넌트 모듈화: Atomic Design Pattern
 재사용 가능하고 확장 가능한 컴포넌트 구조를 위해 Atomic Design Pattern을 적용했습니다.
 
 ```
 src/components/
-├── atoms/           # Button (기본 UI 컴포넌트)
-├── molecules/       # InputField (조합된 컴포넌트)
-└── organisms/       # Modal, ContactForm, ModalProvider (복합 컴포넌트)
+├── atoms/           # 기본 UI 컴포넌트 (최소 단위)
+│   ├── Button.tsx   # 버튼 (variant, size, color 지원)
+│   ├── Text.tsx     # 텍스트 (variant, weight, color, align 지원)
+│   ├── Icon.tsx     # 아이콘 (size, color 지원)
+│   ├── Spinner.tsx  # 로딩 스피너 (size, color 지원)
+│   ├── Badge.tsx    # 배지 (variant, size 지원)
+│   └── index.ts     # Barrel exports
+├── molecules/       # 조합된 컴포넌트 (2개 이상 atoms 조합)
+│   ├── InputField.tsx    # 입력 필드 (아이콘, 에러 상태, 터치 기반 검증)
+│   ├── SelectField.tsx   # 선택 필드 (키보드 접근성, 드롭다운 화살표)
+│   ├── ProgressBar.tsx   # 진행률 표시 (variant, label 지원)
+│   ├── Card.tsx          # 카드 (variant, padding 지원)
+│   ├── Alert.tsx         # 알림 (variant, 아이콘 지원)
+│   └── index.ts          # Barrel exports
+├── organisms/       # 복합 컴포넌트 (완전한 기능)
+│   ├── Modal.tsx         # 모달 (접근성 완전 지원, Portal 사용)
+│   ├── ContactForm.tsx   # 연락처 폼 (다단계 폼, 실시간 검증)
+│   └── ModalProvider.tsx # 모달 프로바이더 (전역 상태 관리)
+├── templates/       # 템플릿 컴포넌트 (레이아웃 구조)
+│   ├── FormTemplate.tsx   # 폼 템플릿 (진행률 표시 포함)
+│   ├── ModalTemplate.tsx # 모달 템플릿 (헤더, 푸터 포함)
+│   └── index.ts           # Barrel exports
+└── pages/          # 페이지 컴포넌트 (완성된 페이지)
+    ├── HomePage.tsx      # 홈페이지 (완전한 접근성 지원)
+    └── index.ts          # Barrel exports
 ```
 
-- **Atoms**: 재사용 가능한 기본 컴포넌트 (Button)
-- **Molecules**: 여러 atoms를 조합한 기능적 컴포넌트 (InputField)
-- **Organisms**: 완전한 기능을 가진 복합 컴포넌트 (Modal, ContactForm)
+- **Atoms**: 재사용 가능한 기본 컴포넌트 (Button, Text, Icon, Spinner, Badge)
+- **Molecules**: 여러 atoms를 조합한 기능적 컴포넌트 (InputField, SelectField, ProgressBar, Card, Alert)
+- **Organisms**: 완전한 기능을 가진 복합 컴포넌트 (Modal, ContactForm, ModalProvider)
+- **Templates**: 레이아웃과 구조를 정의하는 템플릿 컴포넌트 (FormTemplate, ModalTemplate)
+- **Pages**: 완성된 페이지 컴포넌트 (HomePage)
 
 #### ③ 선언적 모달 API: Promise 기반 비동기 처리
 명령형 방식의 모달 관리를 선언적 API로 개선하여 코드 가독성과 재사용성을 향상시켰습니다.
@@ -65,6 +89,8 @@ await openModal(ContactForm, {});
 - **엔터 키 지원**: 각 입력 필드에서 엔터를 누르면 다음 단계로 이동
 - **단계별 자동 포커스**: 각 단계로 이동할 때마다 해당 입력 필드에 자동 포커스
 - **포커스 트랩**: 모달 내에서만 포커스가 순환되도록 제한
+- **SelectField 키보드 지원**: 드롭다운 메뉴 완전한 키보드 조작 (Tab, Space, 화살표 키, Enter)
+- **시각적 포커스 표시**: 모든 상호작용 요소에 명확한 포커스 링 적용
 
 ## ✅ 구현된 내용 상세
 
@@ -181,6 +207,24 @@ useEffect(() => {
 
 ### 3. 폼 관리 계층: React Hook Form과 Zod를 활용한 검증
 
+#### React Hook Form 설정
+실시간 검증과 터치 기반 검증을 위한 설정을 구현했습니다.
+
+```typescript
+// src/components/organisms/ContactForm.tsx
+const {
+  register,
+  handleSubmit,
+  formState: { errors, touchedFields },
+  setFocus,
+  trigger,
+} = useForm<ContactFormData>({
+  resolver: zodResolver(contactSchema),
+  mode: "onBlur",           // 필드에서 포커스가 벗어날 때 검증
+  reValidateMode: "onChange", // 실시간 재검증 활성화
+});
+```
+
 #### 타입 안전한 폼 스키마
 Zod를 활용하여 런타임 타입 검증과 폼 검증을 통합했습니다.
 
@@ -203,13 +247,30 @@ const contactSchema = z.object({
     .optional()
     .refine((url) => {
       if (!url || url.trim() === '') return true; // 빈 값은 허용
+      
+      // URL 형식 검증
       try {
         const urlObj = new URL(url);
-        return urlObj.hostname.includes('github.com');
+        
+        // GitHub 도메인 검증
+        if (!urlObj.hostname.includes('github.com')) {
+          return false;
+        }
+        
+        // 프로토콜 검증 (http 또는 https)
+        if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
+          return false;
+        }
+        
+        // GitHub 프로필 URL 패턴 검증 (예: https://github.com/username)
+        const pathname = urlObj.pathname;
+        const githubProfilePattern = /^\/[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\/?$/;
+        
+        return githubProfilePattern.test(pathname);
       } catch {
         return false;
       }
-    }, "유효한 GitHub 링크를 입력해주세요."),
+    }, "유효한 GitHub 프로필 URL을 입력해주세요. (예: https://github.com/username)"),
 });
 ```
 
@@ -242,6 +303,69 @@ const validateStep = async (step: number) => {
 };
 ```
 
+#### SelectField 컴포넌트: 완전한 키보드 접근성 지원
+드롭다운 선택 필드에서 완전한 키보드 접근성을 구현했습니다.
+
+**주요 기능:**
+- **키보드 조작**: Tab, Space, 화살표 키, Enter 키 완전 지원
+- **시각적 피드백**: 드롭다운 화살표 아이콘과 포커스 링
+- **접근성**: ARIA 속성과 스크린리더 지원
+- **터치 기반 검증**: 사용자 상호작용 후에만 오류 메시지 표시
+- **일관된 스타일**: 다른 입력 필드와 동일한 디자인 시스템
+
+```typescript
+// src/components/molecules/SelectField.tsx
+const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
+  ({ className, id, label, error, touched, options, placeholder, disabled, ...props }, ref) => {
+    const selectId = id || useId();
+    const shouldShowError = touched && error;
+
+    return (
+      <div className={cn("w-full", className)}>
+        <label htmlFor={selectId} className={cn("block text-sm font-medium mb-2", ...)}>
+          {label}
+        </label>
+        <div className="relative">
+          <select
+            id={selectId}
+            ref={ref}
+            disabled={disabled}
+            className={cn(
+              "block w-full appearance-none rounded-md border px-3 py-3 pr-10 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-slate-700 dark:text-neutral-50 cursor-pointer",
+              shouldShowError ? "border-red-500 dark:border-red-500" : "border-neutral-300 dark:border-neutral-700",
+              disabled && "opacity-50 cursor-not-allowed"
+            )}
+            {...props}
+          >
+            {placeholder && (
+              <option value="">
+                {placeholder}
+              </option>
+            )}
+            {options.map((option) => (
+              <option key={option.value} value={option.value} disabled={option.disabled}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          {/* 드롭다운 화살표 아이콘 */}
+          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+            <svg className="w-4 h-4 text-neutral-400 dark:text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+        {shouldShowError && (
+          <p className="mt-1 text-xs text-red-600 dark:text-red-500" role="alert" aria-live="polite">
+            {error}
+          </p>
+        )}
+      </div>
+    );
+  }
+);
+```
+
 #### 키보드 접근성 최적화
 각 단계로 이동할 때마다 해당 입력 필드에 자동 포커스하고, 엔터 키로 다음 단계로 이동할 수 있도록 구현했습니다.
 
@@ -271,6 +395,31 @@ const handleKeyPress = async (e: React.KeyboardEvent) => {
     await validateStep(currentStep);
   }
 };
+```
+
+#### GitHub 링크 실시간 검증
+입력 값이 있을 경우 실시간으로 GitHub 프로필 URL 검증을 수행합니다.
+
+```typescript
+// GitHub 링크 입력 필드에 실시간 검증 적용
+<InputField
+  label="GitHub 링크 (선택사항)"
+  type="url"
+  placeholder="https://github.com/username"
+  {...register("githubLink", {
+    onChange: () => {
+      // 실시간 검증을 위해 githubLink 필드만 트리거
+      trigger("githubLink");
+    }
+  })}
+  error={errors.githubLink?.message}
+  touched={touchedFields.githubLink}
+  disabled={isSubmitting}
+  autoComplete="url"
+  onKeyDown={handleKeyPress}
+  leftIcon="🔗"
+  helperText="GitHub 프로필 URL을 입력해주세요. (선택사항)"
+/>
 ```
 
 #### 폼 단계별 구조
@@ -310,12 +459,16 @@ const handleKeyPress = async (e: React.KeyboardEvent) => {
         💼 경력 정보
       </h3>
       <div className="space-y-4">
-        <select {...register("experience")} onKeyDown={handleKeyPress}>
-          <option value="">경력 연차를 선택해주세요</option>
-          <option value="0-3">0-3년</option>
-          <option value="4-7">4-7년</option>
-          <option value="8+">8년 이상</option>
-        </select>
+        <SelectField
+          label="FE 경력 연차"
+          {...register("experience")}
+          error={errors.experience?.message}
+          touched={touchedFields.experience}
+          options={experienceOptions}
+          disabled={isSubmitting}
+          onKeyDown={handleKeyPress}
+          placeholder="경력 연차를 선택해주세요"
+        />
       </div>
     </div>
   </div>
@@ -716,6 +869,110 @@ const CustomModal = ({ closeModal, resolve, isOpen }: CustomModalProps) => {
 const result = await openModal(CustomModal, { customProp: 'value' });
 ```
 
+## 🔧 최근 업데이트 및 개선사항
+
+### SelectField 키보드 접근성 개선 (2024.12)
+
+#### 문제점
+- 2단계 경력 연차 선택에서 키보드 접근성 문제 발생
+- placeholder 옵션이 `disabled`로 설정되어 키보드로 선택 불가
+- 드롭다운 화살표 아이콘 부재로 시각적 피드백 부족
+
+#### 해결방법
+1. **placeholder 옵션 수정**: `disabled` 속성 제거하여 키보드 선택 가능
+2. **시각적 개선**: SVG 드롭다운 화살표 아이콘 추가
+3. **포커스 링 강화**: `focus:ring-2 focus:ring-primary/20` 적용
+4. **일관된 스타일**: 다른 입력 필드와 동일한 패딩과 높이 적용
+
+#### 구현 결과
+```typescript
+// 수정 전
+const experienceOptions = [
+  { value: "", label: "경력 연차를 선택해주세요", disabled: true }, // ← 문제
+  { value: "0-3", label: "0-3년" },
+  // ...
+];
+
+// 수정 후
+const experienceOptions = [
+  { value: "0-3", label: "0-3년" },
+  { value: "4-7", label: "4-7년" },
+  { value: "8+", label: "8년 이상" },
+];
+
+<SelectField
+  placeholder="경력 연차를 선택해주세요" // ← 이제 이것만 표시
+  options={experienceOptions}
+  // ... 기타 props
+/>
+```
+
+#### 접근성 개선사항
+- **Tab 키**: SelectField로 포커스 이동 가능
+- **Space/Enter 키**: 드롭다운 메뉴 열기 가능
+- **화살표 키**: 옵션 간 이동 가능
+- **Enter 키**: 옵션 선택 및 다음 단계로 이동 가능
+- **ESC 키**: 드롭다운 메뉴 닫기 가능
+
+### GitHub 프로필 검증 강화 (2024.12)
+
+#### 문제점
+- GitHub 링크 입력 시 기본적인 도메인 검증만 수행
+- 실시간 검증 부족으로 사용자 피드백 지연
+- 프로필 URL 패턴 검증 미흡
+
+#### 해결방법
+1. **강화된 스키마 검증**: 프로토콜, 도메인, 패턴 검증 추가
+2. **실시간 검증**: onChange 트리거로 즉시 피드백 제공
+3. **reValidateMode 변경**: onChange로 설정하여 실시간 재검증
+4. **구체적인 에러 메시지**: 예시 포함한 명확한 안내
+
+#### 구현 결과
+```typescript
+// 강화된 GitHub 검증 스키마
+githubLink: z
+  .string()
+  .optional()
+  .refine((url) => {
+    if (!url || url.trim() === '') return true; // 빈 값은 허용
+    
+    try {
+      const urlObj = new URL(url);
+      
+      // GitHub 도메인 검증
+      if (!urlObj.hostname.includes('github.com')) {
+        return false;
+      }
+      
+      // 프로토콜 검증 (http 또는 https)
+      if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
+        return false;
+      }
+      
+      // GitHub 프로필 URL 패턴 검증
+      const pathname = urlObj.pathname;
+      const githubProfilePattern = /^\/[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\/?$/;
+      
+      return githubProfilePattern.test(pathname);
+    } catch {
+      return false;
+    }
+  }, "유효한 GitHub 프로필 URL을 입력해주세요. (예: https://github.com/username)")
+
+// 실시간 검증 적용
+{...register("githubLink", {
+  onChange: () => {
+    trigger("githubLink"); // 실시간 검증 트리거
+  }
+})}
+```
+
+#### 검증 개선사항
+- **URL 형식 검증**: 유효한 URL 구조 확인
+- **프로토콜 검증**: http/https만 허용
+- **도메인 검증**: github.com 포함 확인
+- **패턴 검증**: /username 형식 검증 (하이픈 포함)
+- **실시간 피드백**: 입력 시마다 즉시 검증 결과 표시
 
 ---
 
