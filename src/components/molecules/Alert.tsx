@@ -37,7 +37,7 @@ const Alert = forwardRef<HTMLDivElement, AlertProps>(
       error: "❌",
     };
 
-    const displayIcon = icon || iconMap[variant];
+    const displayIcon = icon !== undefined ? icon : iconMap[variant];
 
     return (
       <div
@@ -51,7 +51,7 @@ const Alert = forwardRef<HTMLDivElement, AlertProps>(
         {...props}
       >
         <div className="flex items-start">
-          {displayIcon && (
+          {displayIcon && displayIcon.trim() !== "" && (
             <div className="flex-shrink-0 mr-3">
               <Icon name={displayIcon} size="sm" />
             </div>
