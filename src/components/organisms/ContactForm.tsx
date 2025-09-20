@@ -57,7 +57,7 @@ const contactSchema = z.object({
     }, "유효한 GitHub 프로필 URL을 입력해주세요. (예: https://github.com/username)"),
 });
 
-type ContactFormData = z.infer<typeof contactSchema>;
+export type ContactFormData = z.infer<typeof contactSchema>;
 
 // Props Interface
 interface ContactFormProps {
