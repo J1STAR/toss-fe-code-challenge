@@ -4,12 +4,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "../atoms/Button";
 import { InputField } from "../molecules/InputField";
-import {
-  ModalHeader,
-  ModalFooter,
-  ModalTitle,
-  ModalDescription,
-} from "./Modal";
+import { SelectField } from "../molecules/SelectField";
+import { ProgressBar } from "../molecules/ProgressBar";
+import { Card } from "../molecules/Card";
+import { Alert } from "../molecules/Alert";
+import { Spinner } from "../atoms/Spinner";
+import { Text } from "../atoms/Text";
+import { FormTemplate } from "../templates/FormTemplate";
+import { ModalTemplate } from "../templates/ModalTemplate";
 
 // Enhanced Form Schema
 const contactSchema = z.object({
@@ -29,13 +31,30 @@ const contactSchema = z.object({
     .optional()
     .refine((url) => {
       if (!url || url.trim() === '') return true; // 빈 값은 허용
+      
+      // URL 형식 검증
       try {
         const urlObj = new URL(url);
-        return urlObj.hostname.includes('github.com');
+        
+        // GitHub 도메인 검증
+        if (!urlObj.hostname.includes('github.com')) {
+          return false;
+        }
+        
+        // 프로토콜 검증 (http 또는 https)
+        if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
+          return false;
+        }
+        
+        // GitHub 프로필 URL 패턴 검증 (예: https://github.com/username)
+        const pathname = urlObj.pathname;
+        const githubProfilePattern = /^\/[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\/?$/;
+        
+        return githubProfilePattern.test(pathname);
       } catch {
         return false;
       }
-    }, "유효한 GitHub 링크를 입력해주세요."),
+    }, "유효한 GitHub 프로필 URL을 입력해주세요. (예: https://github.com/username)"),
 });
 
 type ContactFormData = z.infer<typeof contactSchema>;
@@ -65,7 +84,7 @@ const ContactForm = ({ closeModal, resolve, onIdsReady, isOpen }: ContactFormPro
   } = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
     mode: "onBlur",
-    reValidateMode: "onBlur",
+    reValidateMode: "onChange", // 실시간 재검증 활성화
   });
 
 
@@ -168,115 +187,158 @@ const ContactForm = ({ closeModal, resolve, onIdsReady, isOpen }: ContactFormPro
   // Show completion screen
   if (isCompleted && submittedData) {
     return (
-      <div>
-        <ModalHeader>
-          <ModalTitle id={titleId}>🎉 신청 정보 제출 완료</ModalTitle>
-          <ModalDescription id={descriptionId}>
-            지원 정보가 성공적으로 제출되었습니다.
-          </ModalDescription>
-        </ModalHeader>
-
-        <div className="space-y-6">
-          <div className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-lg bg-green-50 p-4 dark:bg-green-900/20">
-                <h4 className="mb-2 text-sm font-semibold text-green-800 dark:text-green-200">
+      <ModalTemplate
+        title="🎉 신청 정보 제출 완료"
+        description="지원 정보가 성공적으로 제출되었습니다."
+        titleId={titleId}
+        descriptionId={descriptionId}
+        footer={
+          <div className="flex w-full justify-end">
+            <Button 
+              onClick={handleCompletion}
+              color="success"
+              size="lg"
+            >
+              확인
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card variant="outlined" className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20">
+              <div className="space-y-3">
+                <Text as="h4" variant="small" weight="semibold" color="success">
                   👤 기본 정보
-                </h4>
-                <div className="space-y-2 text-sm">
-                  <div>
-                    <span className="font-medium text-green-700 dark:text-green-300">이름:</span>
-                    <span className="ml-2 text-green-600 dark:text-green-400">{submittedData.name}</span>
+                </Text>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <Text variant="small" weight="medium" color="success">이름:</Text>
+                    <Text variant="small" color="success">{submittedData.name}</Text>
                   </div>
-                  <div>
-                    <span className="font-medium text-green-700 dark:text-green-300">이메일:</span>
-                    <span className="ml-2 text-green-600 dark:text-green-400">{submittedData.email}</span>
+                  <div className="flex justify-between">
+                    <Text variant="small" weight="medium" color="success">이메일:</Text>
+                    <Text variant="small" color="success">{submittedData.email}</Text>
                   </div>
                 </div>
               </div>
-              
-              <div className="rounded-lg bg-green-50 p-4 dark:bg-green-900/20">
-                <h4 className="mb-2 text-sm font-semibold text-green-800 dark:text-green-200">
+            </Card>
+            
+            <Card variant="outlined" className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20">
+              <div className="space-y-3">
+                <Text as="h4" variant="small" weight="semibold" color="success">
                   💼 경력 정보
-                </h4>
-                <div className="space-y-2 text-sm">
-                  <div>
-                    <span className="font-medium text-green-700 dark:text-green-300">경력 연차:</span>
-                    <span className="ml-2 text-green-600 dark:text-green-400">{submittedData.experience}년</span>
+                </Text>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <Text variant="small" weight="medium" color="success">경력 연차:</Text>
+                    <Text variant="small" color="success">{submittedData.experience}년</Text>
                   </div>
                   {submittedData.githubLink && (
-                    <div>
-                      <span className="font-medium text-green-700 dark:text-green-300">GitHub:</span>
+                    <div className="flex justify-between">
+                      <Text variant="small" weight="medium" color="success">GitHub:</Text>
                       <a 
                         href={submittedData.githubLink} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="ml-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline"
+                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline text-sm"
                       >
-                        {submittedData.githubLink}
+                        프로필 보기
                       </a>
                     </div>
                   )}
                 </div>
               </div>
-            </div>
-            
-            <div className="rounded-lg bg-green-100 p-4 dark:bg-green-900/30">
-              <h4 className="mb-2 text-sm font-semibold text-green-800 dark:text-green-200">
-                📋 제출 요약
-              </h4>
-              <p className="text-sm text-green-600 dark:text-green-400">
-                {submittedData.name}님의 지원 정보가 성공적으로 제출되었습니다. 
-                {submittedData.githubLink ? ' GitHub 프로필도 함께 등록되었습니다.' : ' GitHub 프로필은 등록되지 않았습니다.'}
-              </p>
-            </div>
+            </Card>
           </div>
+          
+          <Alert
+            variant="success"
+            title="📋 제출 요약"
+            description={`${submittedData.name}님의 지원 정보가 성공적으로 제출되었습니다. ${
+              submittedData.githubLink ? 'GitHub 프로필도 함께 등록되었습니다.' : 'GitHub 프로필은 등록되지 않았습니다.'
+            }`}
+          />
         </div>
-
-        <ModalFooter>
-          <div className="flex w-full justify-end">
-            <Button 
-              onClick={handleCompletion}
-              className="bg-green-600 text-white hover:bg-green-700"
-            >
-              확인
-            </Button>
-          </div>
-        </ModalFooter>
-      </div>
+      </ModalTemplate>
     );
   }
 
+  const experienceOptions = [
+    { value: "0-3", label: "0-3년" },
+    { value: "4-7", label: "4-7년" },
+    { value: "8+", label: "8년 이상" },
+  ];
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
-      <ModalHeader>
-        <ModalTitle id={titleId}>신청 폼 작성하기</ModalTitle>
-        <ModalDescription id={descriptionId}>
-          지원 정보를 입력해주세요. 언제든지 ESC 키를 눌러 취소할 수 있습니다.
-        </ModalDescription>
-      </ModalHeader>
+      <ModalTemplate
+        title="신청 폼 작성하기"
+        description="지원 정보를 입력해주세요. 언제든지 ESC 키를 눌러 취소할 수 있습니다."
+        titleId={titleId}
+        descriptionId={descriptionId}
+        footer={
+          <div className="flex w-full justify-between">
+            <div>
+              {currentStep > 1 && (
+                <Button 
+                  type="button" 
+                  variant="outlined" 
+                  onClick={goToPreviousStep}
+                  disabled={isSubmitting}
+                >
+                  ← 이전
+                </Button>
+              )}
+            </div>
+            <div className="flex space-x-2">
+              <Button 
+                type="button" 
+                variant="outlined" 
+                onClick={handleCancel}
+                disabled={isSubmitting}
+              >
+                취소
+              </Button>
+              {currentStep < 3 ? (
+                <Button 
+                  type="button" 
+                  onClick={() => validateStep(currentStep)}
+                  disabled={isSubmitting}
+                >
+                  다음 →
+                </Button>
+              ) : (
+                <Button 
+                  type="button" 
+                  onClick={() => validateStep(currentStep)}
+                  disabled={isSubmitting}
+                  loading={isSubmitting}
+                >
+                  {isSubmitting ? "제출 중..." : "제출하기"}
+                </Button>
+              )}
+            </div>
+          </div>
+        }
+      >
+        {/* Progress Indicator */}
+        <ProgressBar 
+          value={currentStep - 1} 
+          max={2} 
+          variant="primary"
+          showLabel={true}
+          label={`단계 ${currentStep} / 3`}
+        />
 
-      {/* Progress Indicator */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-400">
-          <span>단계 {currentStep} / 3</span>
-          <span>{Math.round(((currentStep - 1) / 3) * 100)}% 완료</span>
-        </div>
-        <div className="mt-2 h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700">
-          <div 
-            className={`h-2 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 transition-all duration-300`}
-            style={{ width: `${((currentStep - 1) / 3) * 100}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Step 1: Personal Information */}
-      {currentStep === 1 && (
-        <div className="space-y-6">
-          <div>
-            <h3 className="mb-4 text-lg font-semibold text-slate-900 dark:text-slate-100">
-              👤 기본 정보
-            </h3>
+        {/* Step 1: Personal Information */}
+        {currentStep === 1 && (
+          <FormTemplate
+            title="👤 기본 정보"
+            currentStep={currentStep}
+            totalSteps={3}
+            showProgress={false}
+          >
             <div className="space-y-4">
               <InputField
                 label="이름"
@@ -288,6 +350,7 @@ const ContactForm = ({ closeModal, resolve, onIdsReady, isOpen }: ContactFormPro
                 disabled={isSubmitting}
                 autoComplete="name"
                 onKeyDown={handleKeyPress}
+                leftIcon="👤"
               />
               <InputField
                 label="이메일 주소"
@@ -299,123 +362,71 @@ const ContactForm = ({ closeModal, resolve, onIdsReady, isOpen }: ContactFormPro
                 disabled={isSubmitting}
                 autoComplete="email"
                 onKeyDown={handleKeyPress}
+                leftIcon="📧"
               />
             </div>
-          </div>
-        </div>
-      )}
+          </FormTemplate>
+        )}
 
-      {/* Step 2: Experience Information */}
-      {currentStep === 2 && (
-        <div className="space-y-6">
-          <div>
-            <h3 className="mb-4 text-lg font-semibold text-slate-900 dark:text-slate-100">
-              💼 경력 정보
-            </h3>
+        {/* Step 2: Experience Information */}
+        {currentStep === 2 && (
+          <FormTemplate
+            title="💼 경력 정보"
+            currentStep={currentStep}
+            totalSteps={3}
+            showProgress={false}
+          >
             <div className="space-y-4">
-              <div>
-                <label htmlFor="experience" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                  FE 경력 연차
-                </label>
-                <select
-                  id="experience"
-                  {...register("experience")}
-                  className={`mt-1 block w-full rounded-md border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-slate-700 dark:text-slate-100 ${
-                    touchedFields.experience && errors.experience 
-                      ? 'border-red-500 dark:border-red-500' 
-                      : 'border-slate-300 dark:border-slate-600'
-                  }`}
-                  disabled={isSubmitting}
-                  onKeyDown={handleKeyPress}
-                >
-                  <option value="">경력 연차를 선택해주세요</option>
-                  <option value="0-3">0-3년</option>
-                  <option value="4-7">4-7년</option>
-                  <option value="8+">8년 이상</option>
-                </select>
-                {touchedFields.experience && errors.experience && (
-                  <p className="mt-1 text-xs text-red-600 dark:text-red-400" role="alert" aria-live="polite">
-                    {errors.experience.message}
-                  </p>
-                )}
-              </div>
+              <SelectField
+                label="FE 경력 연차"
+                {...register("experience")}
+                error={errors.experience?.message}
+                touched={touchedFields.experience}
+                options={experienceOptions}
+                disabled={isSubmitting}
+                onKeyDown={handleKeyPress}
+                placeholder="경력 연차를 선택해주세요"
+              />
             </div>
-          </div>
-        </div>
-      )}
+          </FormTemplate>
+        )}
 
-      {/* Step 3: GitHub Link */}
-      {currentStep === 3 && (
-        <div className="space-y-6">
-          <div>
-            <h3 className="mb-4 text-lg font-semibold text-slate-900 dark:text-slate-100">
-              🔗 GitHub 정보
-            </h3>
+        {/* Step 3: GitHub Link */}
+        {currentStep === 3 && (
+          <FormTemplate
+            title="🔗 GitHub 정보"
+            currentStep={currentStep}
+            totalSteps={3}
+            showProgress={false}
+          >
             <div className="space-y-4">
               <InputField
                 label="GitHub 링크 (선택사항)"
                 type="url"
                 placeholder="https://github.com/username"
-                {...register("githubLink")}
+                {...register("githubLink", {
+                  onChange: () => {
+                    // 실시간 검증을 위해 githubLink 필드만 트리거
+                    trigger("githubLink");
+                  }
+                })}
                 error={errors.githubLink?.message}
                 touched={touchedFields.githubLink}
                 disabled={isSubmitting}
                 autoComplete="url"
                 onKeyDown={handleKeyPress}
+                leftIcon="🔗"
+                helperText="GitHub 프로필 URL을 입력해주세요. (선택사항)"
               />
-              <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
-                <p className="text-sm text-blue-700 dark:text-blue-300">
-                  💡 <strong>팁:</strong> GitHub 프로필 URL을 입력해주세요. (선택사항) 예: https://github.com/username
-                </p>
-              </div>
+              <Alert
+                variant="info"
+                description="GitHub 프로필 URL을 입력해주세요. (선택사항) 예: https://github.com/username"
+              />
             </div>
-          </div>
-        </div>
-      )}
+          </FormTemplate>
+        )}
 
-      <ModalFooter>
-        <div className="flex w-full justify-between">
-          <div>
-            {currentStep > 1 && (
-              <Button 
-                type="button" 
-                variant="outlined" 
-                onClick={goToPreviousStep}
-                disabled={isSubmitting}
-              >
-                ← 이전
-              </Button>
-            )}
-          </div>
-          <div className="flex space-x-2">
-            <Button 
-              type="button" 
-              variant="outlined" 
-              onClick={handleCancel}
-              disabled={isSubmitting}
-            >
-              취소
-            </Button>
-            {currentStep < 3 ? (
-              <Button 
-                type="button" 
-                onClick={() => validateStep(currentStep)}
-                disabled={isSubmitting}
-              >
-                다음 →
-              </Button>
-            ) : (
-              <Button 
-                type="button" 
-                onClick={() => validateStep(currentStep)}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "제출 중..." : "제출하기"}
-              </Button>
-            )}
-          </div>
-        </div>
-      </ModalFooter>
+      </ModalTemplate>
 
       {/* Screen reader announcements - 터치된 필드의 오류만 알림 */}
       {(touchedFields.name && errors.name) || 
@@ -439,15 +450,17 @@ const ContactForm = ({ closeModal, resolve, onIdsReady, isOpen }: ContactFormPro
         </div>
       ) : null}
 
-      {/* Loading overlay */}
-      {isSubmitting && (
-        <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
-          <div className="text-center">
-            <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-            <p className="text-sm text-slate-600 dark:text-slate-400">제출 중...</p>
+        {/* Loading overlay */}
+        {isSubmitting && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
+            <div className="text-center">
+              <Spinner size="lg" color="primary" label="제출 중..." />
+              <Text variant="small" color="muted" className="mt-4">
+                제출 중...
+              </Text>
+            </div>
           </div>
-        </div>
-      )}
+        )}
     </form>
   );
 };
