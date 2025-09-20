@@ -824,9 +824,75 @@ yarn install
 # 개발 서버 실행
 yarn dev
 
+# Storybook 실행 (컴포넌트 문서 및 테스트)
+yarn storybook
+
 # 코드 검사 (포맷팅 및 린팅)
 yarn check
+
+# 테스트 실행
+yarn test:run
+
+# 테스트 커버리지 확인
+yarn test:coverage
 ```
+
+## 📚 Storybook 컴포넌트 문서
+
+이 프로젝트는 **Storybook**을 통해 모든 컴포넌트의 문서화와 테스트를 제공합니다.
+
+### 🎯 컴포넌트 카테고리
+
+#### **Atoms (원자)**
+- **Button**: 다양한 variant, size, color를 지원하는 버튼
+- **Text**: 유연한 텍스트 컴포넌트 (HTML 요소, variant, weight, color 지원)
+- **Icon**: 이모지/텍스트 아이콘 컴포넌트
+- **Spinner**: 로딩 상태 표시 스피너
+- **Badge**: 상태/카테고리 표시 배지
+
+#### **Molecules (분자)**
+- **InputField**: 라벨, 에러 상태, 아이콘을 지원하는 입력 필드
+- **SelectField**: 키보드 접근성을 완전히 지원하는 선택 필드
+- **ProgressBar**: 진행률 표시 바 (variant, size, 라벨 지원)
+- **Card**: 콘텐츠 구조화 카드 컴포넌트
+- **Alert**: 정보 전달 알림 컴포넌트
+
+#### **Organisms (유기체)**
+- **Modal**: 완전한 접근성을 지원하는 모달 컴포넌트
+- **ContactForm**: 다단계 폼과 실시간 검증을 지원하는 연락처 폼
+- **ModalProvider**: 전역 모달 상태 관리 프로바이더
+
+#### **Templates (템플릿)**
+- **FormTemplate**: 진행률 표시와 단계별 폼 구조를 지원하는 폼 템플릿
+- **ModalTemplate**: 헤더, 푸터, 닫기 버튼을 포함한 모달 템플릿
+
+### 🚀 Storybook 실행
+
+```bash
+# Storybook 개발 서버 실행 (http://localhost:6006)
+yarn storybook
+
+# Storybook 빌드
+yarn build-storybook
+```
+
+### 📖 Storybook 기능
+
+- **📋 자동 문서화**: 모든 컴포넌트의 props와 사용법 자동 생성
+- **🎨 인터랙티브 테스트**: 실시간으로 컴포넌트 속성 변경 및 테스트
+- **♿ 접근성 검사**: `@storybook/addon-a11y`를 통한 접근성 자동 검사
+- **📱 반응형 테스트**: 다양한 화면 크기에서 컴포넌트 테스트
+- **🌙 다크모드 지원**: 라이트/다크 테마 전환 테스트
+- **⌨️ 키보드 접근성**: 모든 컴포넌트의 키보드 조작 테스트
+
+### 🔍 컴포넌트 탐색
+
+Storybook에서는 다음과 같은 방식으로 컴포넌트를 탐색할 수 있습니다:
+
+1. **카테고리별 탐색**: Atoms → Molecules → Organisms → Templates 순서로 구성
+2. **인터랙티브 컨트롤**: 각 컴포넌트의 props를 실시간으로 변경하여 테스트
+3. **다양한 상태**: 기본, 에러, 로딩, 비활성화 등 다양한 상태 확인
+4. **사용 예시**: 실제 사용 시나리오를 보여주는 예시 스토리
 
 ## 📝 사용 예시
 
@@ -973,6 +1039,278 @@ githubLink: z
 - **도메인 검증**: github.com 포함 확인
 - **패턴 검증**: /username 형식 검증 (하이픈 포함)
 - **실시간 피드백**: 입력 시마다 즉시 검증 결과 표시
+
+---
+
+## 🧪 테스트 시스템
+
+### 테스트 환경 구성
+프로젝트는 **Vitest**와 **React Testing Library**를 사용하여 포괄적인 테스트 환경을 구축했습니다.
+
+#### 테스트 도구 스택
+- **Vitest**: 빠른 테스트 러너 및 실행 환경
+- **React Testing Library**: 컴포넌트 테스트를 위한 유틸리티
+- **@testing-library/user-event**: 사용자 상호작용 시뮬레이션
+- **@testing-library/jest-dom**: Jest DOM 매처 확장
+- **jsdom**: 브라우저 환경 시뮬레이션
+- **@vitest/coverage-v8**: 코드 커버리지 리포팅
+
+#### 테스트 실행 명령어
+```bash
+# 개발 모드로 테스트 실행 (watch mode)
+yarn test
+
+# 테스트 UI 실행
+yarn test:ui
+
+# 테스트 한 번 실행
+yarn test:run
+
+# 커버리지 포함 테스트 실행
+yarn test:coverage
+```
+
+### 테스트 커버리지
+
+#### 전체 테스트 현황
+- **총 테스트 파일**: 16개
+- **총 테스트 케이스**: 152개
+- **테스트 통과율**: 100%
+- **실행 시간**: 약 11초
+
+#### 컴포넌트별 테스트 현황
+
+**Atoms (원자 컴포넌트)**
+- `Button.test.tsx`: 8개 테스트
+- `Text.test.tsx`: 7개 테스트
+- `Icon.test.tsx`: 6개 테스트
+- `Spinner.test.tsx`: 6개 테스트
+- `Badge.test.tsx`: 7개 테스트
+
+**Molecules (분자 컴포넌트)**
+- `InputField.test.tsx`: 8개 테스트
+- `SelectField.test.tsx`: 8개 테스트
+- `ProgressBar.test.tsx`: 8개 테스트
+- `Card.test.tsx`: 6개 테스트
+- `Alert.test.tsx`: 9개 테스트
+
+**Organisms (유기체 컴포넌트)**
+- `Modal.test.tsx`: 7개 테스트
+- `ContactForm.test.tsx`: 8개 테스트
+- `ModalProvider.test.tsx`: 5개 테스트
+
+**Templates (템플릿 컴포넌트)**
+- `FormTemplate.test.tsx`: 6개 테스트
+- `ModalTemplate.test.tsx`: 6개 테스트
+
+**Store (상태 관리)**
+- `modal.store.test.ts`: 10개 테스트
+
+### 테스트 전략
+
+#### 1. 컴포넌트 테스트
+- **렌더링 테스트**: 컴포넌트가 올바르게 렌더링되는지 확인
+- **Props 테스트**: 다양한 props 조합에 대한 동작 검증
+- **상태 테스트**: 컴포넌트 내부 상태 변화 검증
+- **이벤트 테스트**: 사용자 상호작용에 대한 반응 검증
+
+#### 2. 접근성 테스트
+- **ARIA 속성 검증**: 필수 ARIA 속성 존재 확인
+- **키보드 네비게이션**: Tab, Enter, Escape 키 동작 검증
+- **포커스 관리**: 포커스 트랩 및 포커스 복귀 검증
+- **스크린리더 지원**: 의미있는 라벨과 설명 제공 확인
+
+#### 3. 폼 검증 테스트
+- **실시간 검증**: 입력 중 즉시 검증 결과 표시
+- **에러 상태**: 검증 실패 시 적절한 에러 메시지 표시
+- **터치 기반 검증**: 사용자 상호작용 후에만 에러 표시
+- **다단계 폼**: 단계별 진행 및 데이터 유지 검증
+
+#### 4. 모달 시스템 테스트
+- **모달 열기/닫기**: 기본 모달 동작 검증
+- **Promise 기반 API**: 비동기 모달 관리 검증
+- **포커스 관리**: 모달 열릴 때 자동 포커스, 닫힐 때 포커스 복귀
+- **ESC 키 지원**: 키보드로 모달 닫기 검증
+
+---
+
+## 📚 Storybook 컴포넌트 문서
+
+### Storybook 개요
+프로젝트는 **Storybook**을 사용하여 모든 컴포넌트의 문서화와 시각적 테스트 환경을 제공합니다.
+
+#### Storybook 실행 명령어
+```bash
+# Storybook 개발 서버 실행
+yarn storybook
+
+# Storybook 빌드
+yarn build-storybook
+```
+
+#### Storybook 접속
+- **로컬 개발**: http://localhost:6006
+- **빌드된 문서**: `storybook-static/` 폴더
+
+### 컴포넌트 카테고리별 스토리
+
+#### Atoms (원자 컴포넌트)
+**Button**
+- 기본 버튼, 변형별 버튼, 색상별 버튼
+- 크기별 버튼, 아이콘 포함 버튼
+- 로딩 상태, 비활성화 상태
+- 모든 조합 예시
+
+**Text**
+- 텍스트 변형 (caption, small, body, large, lead)
+- 폰트 굵기 (light, normal, medium, semibold, bold)
+- 색상 테마 (default, muted, primary, secondary, success, warning, error)
+- 정렬 방식 (left, center, right, justify)
+- 제목 계층, 타이포그래피 스케일
+
+**Icon**
+- 크기별 아이콘 (xs, sm, md, lg, xl)
+- 색상별 아이콘
+- 이모지 아이콘, 텍스트 아이콘
+- 카테고리별 아이콘 (기술, 상태, 액션, 네비게이션)
+
+**Spinner**
+- 크기별 스피너 (xs, sm, md, lg, xl)
+- 색상별 스피너 (primary, secondary, success, warning, error)
+- 라벨 포함 스피너
+- 컨텍스트별 사용 예시 (로딩 상태, 버튼 내 스피너)
+
+**Badge**
+- 변형별 배지 (default, primary, secondary, success, warning, error, outline)
+- 크기별 배지 (sm, md, lg)
+- 상태 표시 배지, 카테고리 배지
+- 숫자 배지, 알림 배지
+
+#### Molecules (분자 컴포넌트)
+**InputField**
+- 입력 타입별 필드 (text, email, password, number, tel, url)
+- 아이콘 포함 필드 (왼쪽, 오른쪽 아이콘)
+- 상태별 필드 (기본, 에러, 도움말, 비활성화)
+- 스타일 변형 (default, filled, outlined)
+- 폼 예시, 검증 예시, 접근성 데모
+
+**SelectField**
+- 플레이스홀더 포함 셀렉트
+- 비활성 옵션 포함 셀렉트
+- 에러 상태, 비활성화 상태
+- 폼 예시, 긴 옵션 목록
+- 카테고리별 예시 (개발 경력, 기술 스택, 프로젝트 상태)
+- 접근성 데모
+
+**ProgressBar**
+- 변형별 프로그레스 바 (default, primary, success, warning, error)
+- 크기별 프로그레스 바 (sm, md, lg)
+- 진행값별 프로그레스 바 (0%, 25%, 50%, 75%, 100%)
+- 라벨 포함/미포함 프로그레스 바
+- 커스텀 최대값, 애니메이션 프로그레스 바
+- 실제 사용 예시 (파일 업로드, 설치 진행, 데이터 동기화)
+
+**Card**
+- 변형별 카드 (default, outlined, elevated)
+- 패딩 크기별 카드 (none, sm, md, lg)
+- 콘텐츠 예시, 인터랙티브 카드
+- 제품 카드, 사용자 프로필 카드
+
+**Alert**
+- 변형별 알림 (info, success, warning, error)
+- 제목 포함/미포함 알림
+- 커스텀 아이콘 알림
+- 닫기 가능한 알림
+- 긴 내용 알림, 폼 검증 알림
+- 시스템 알림, 접근성 데모
+
+#### Organisms (유기체 컴포넌트)
+**Modal**
+- 기본 모달, 폼 모달, 확인 모달
+- 긴 내용 모달, 접근성 데모 모달
+- 다중 모달, 커스텀 크기 모달
+
+**ContactForm**
+- 기본 폼, 닫힌 상태 폼
+- 인터랙티브 폼, 폼 단계별 데모
+- 검증 데모, 접근성 데모
+
+**ModalProvider**
+- 기본 모달 프로바이더, 연락처 폼 모달
+- 다중 모달, 모달 상태 관리
+- 커스텀 모달 컴포넌트, 오류 처리
+
+#### Templates (템플릿 컴포넌트)
+**FormTemplate**
+- 기본 폼 템플릿, 진행률 포함 폼 템플릿
+- 다단계 폼, 다른 단계별 폼 템플릿
+- 진행률 없는 폼 템플릿, 긴 폼 템플릿
+- 등록 폼 템플릿, 설문 폼 템플릿
+
+**ModalTemplate**
+- 기본 모달 템플릿, 폼 모달 템플릿
+- 닫기 버튼 포함 모달 템플릿, 확인 모달 템플릿
+- 성공 모달 템플릿, 긴 내용 모달 템플릿
+- 인터랙티브 모달 템플릿, 접근성 데모 모달 템플릿
+- 설정 모달 템플릿, 사용자 프로필 모달 템플릿, 결제 모달 템플릿
+
+### Storybook 기능
+
+#### 1. 인터랙티브 컨트롤
+- **Controls**: 컴포넌트 props를 실시간으로 조작
+- **Actions**: 이벤트 핸들러 동작 확인
+- **Args**: 스토리별 인수 관리
+
+#### 2. 접근성 테스트
+- **@storybook/addon-a11y**: 자동 접근성 검사
+- **접근성 패널**: WCAG 가이드라인 준수 확인
+- **키보드 네비게이션**: Tab, Enter, Escape 키 테스트
+
+#### 3. 문서화
+- **자동 문서 생성**: 컴포넌트 props 자동 문서화
+- **사용 예시**: 다양한 사용 사례 제공
+- **모범 사례**: 컴포넌트 사용 가이드
+
+#### 4. 시각적 테스트
+- **컴포넌트 격리**: 독립적인 컴포넌트 테스트
+- **상태별 확인**: 다양한 상태와 변형 확인
+- **반응형 테스트**: 다양한 화면 크기에서 확인
+
+### Storybook 활용 방법
+
+#### 1. 컴포넌트 개발
+```typescript
+// 스토리 작성 예시
+export const Default: Story = {
+  args: {
+    variant: 'contained',
+    size: 'md',
+    color: 'primary',
+    children: '버튼',
+  },
+};
+
+export const Variants: Story = {
+  render: () => (
+    <div className="flex flex-wrap gap-4">
+      <Button variant="contained">Contained</Button>
+      <Button variant="outlined">Outlined</Button>
+      <Button variant="text">Text</Button>
+      <Button variant="ghost">Ghost</Button>
+    </div>
+  ),
+};
+```
+
+#### 2. 디자인 시스템 구축
+- **일관된 디자인**: 모든 컴포넌트의 일관된 스타일 확인
+- **변형 관리**: 다양한 변형과 상태 관리
+- **토큰 시스템**: 색상, 크기, 간격 등의 디자인 토큰 확인
+
+#### 3. 팀 협업
+- **컴포넌트 라이브러리**: 팀 전체가 사용할 수 있는 컴포넌트 라이브러리
+- **문서화**: 컴포넌트 사용법과 예시 제공
+- **피드백 수집**: 디자이너와 개발자 간 피드백 수집
 
 ---
 
